@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>كشف النقاط - ماستر 1 - سكيكدة</title>
+    <style>
+        :root { --primary-green: #108a65; --bg-gray: #f2f2f2; --text-dark: #333; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, sans-serif; background: var(--bg-gray); margin: 0; padding: 10px; color: var(--text-dark); }
+        .app-container { max-width: 500px; margin: auto; background: #fff; border-radius: 20px; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+        .header { background: var(--primary-green); color: white; padding: 20px; text-align: center; font-size: 1.4em; font-weight: bold; }
+        .tabs { display: flex; justify-content: space-around; padding: 15px; background: white; }
+        .tab { border: 2px solid var(--primary-green); color: var(--primary-green); padding: 5px 15px; border-radius: 20px; font-weight: bold; font-size: 0.8em; }
+        .tab.active { background: var(--primary-green); color: white; }
+        
+        .semester-title { text-align: center; padding: 10px; color: #666; font-weight: bold; }
+        .module-row { display: grid; grid-template-columns: 1fr 40px 40px; padding: 12px 15px; border-bottom: 1px solid #eee; align-items: center; }
+        .module-row.header-row { background: #fafafa; font-size: 0.8em; color: #888; }
+        .module-info { text-align: right; }
+        .module-name { font-weight: bold; font-size: 0.9em; display: block; }
+        .module-code { font-size: 0.7em; color: #108a65; }
+        .score-inputs { display: flex; gap: 5px; padding: 10px 15px; background: #f9f9f9; border-bottom: 2px solid #eee; }
+        .score-inputs input { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 5px; text-align: center; }
+        
+        .final-results { background: #fff; padding: 20px; margin-top: 10px; border-radius: 20px 20px 0 0; border-top: 5px solid var(--primary-green); }
+        .result-item { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px dashed #ccc; }
+        .gpa { font-size: 1.5em; color: var(--primary-green); font-weight: bold; }
+        .calc-btn { background: var(--primary-green); color: white; width: 90%; display: block; margin: 15px auto; padding: 12px; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    <div class="header">كشف النقاط</div>
+    
+    <div class="tabs">
+        <div class="tab">2023/2024</div>
+        <div class="tab">2024/2025</div>
+        <div class="tab active">2025/2026</div>
+    </div>
+
+    <div class="semester-title">ماستر سنة أولى</div>
+
+    <div id="content">
+        <h3 style="padding-right:15px; color:var(--primary-green)">السداسي الأول</h3>
+        <div id="s1-list"></div>
+
+        <h3 style="padding-right:15px; color:var(--primary-green)">السداسي الثاني</h3>
+        <div id="s2-list"></div>
+    </div>
+
+    <button class="calc-btn" onclick="calculate()">حساب المعدل النهائي</button>
+
+    <div class="final-results">
+        <div class="result-item">معدل السداسي 1: <span id="resS1" class="gpa">0.00</span></div>
+        <div class="result-item">معدل السداسي 2: <span id="resS2" class="gpa">0.00</span></div>
+        <div class="result-item" style="border:none">المعدل السنوي: <span id="resYear" class="gpa" style="color:#d35400">0.00</span></div>
+    </div>
+</div>
+
+<script>
+    // بيانات السداسي الأول من الكانفس
+    const s1_data = [
+        { name: "Technologie de transformation", code: "D00F0001M_S1", coeff: 3, hasTD: false, hasTP: true },
+        { name: "Operations unitaires dans les IAA", code: "D00F0001M_S1", coeff: 3, hasTD: true, hasTP: true },
+        { name: "IAA gestion de la qualité", code: "D00F0001M_S1", coeff: 3, hasTD: false, hasTP: true },
+        { name: "Sécurité alimentaire", code: "D00M0001M_S1", coeff: 2, hasTD: false, hasTP: true },
+        { name: "Biochimie alimentaire", code: "D00M0001M_S1", coeff: 3, hasTD: false, hasTP: true },
+        { name: "Méthodologie de recherche", code: "D00D0001M_S1", coeff: 2, hasTD: false, hasTP: false },
+        { name: "Communication", code: "D00T0001M_S1", coeff: 1, hasTD: false, hasTP: false }
+    ];
+
+    // بيانات السداسي الثاني من صورة كشف النقاط
+    const s2_data = [
+        { name: "التخمرات", code: "D00D0001M_S2", coeff: 2, hasTD: false, hasTP: true },
+        { name: "الخصائص الفيزيوكيميائية للأغذية", code: "D00F0001M_S2", coeff: 3, hasTD: true, hasTP: true },
+        { name: "التفاعلات الحيوية", code: "D00F0001M_S2", coeff: 3, hasTD: false, hasTP: true },
+        { name: "علم الأحياء الدقيقة الغذائي", code: "D00F0001M_S2", coeff: 3, hasTD: false, hasTP: true },
+        { name: "الإحصاء التطبيقي", code: "D00M0001M_S2", coeff: 2, hasTD: true, hasTP: false },
+        { name: "التحولات الحيوية", code: "D00M0001M_S2", coeff: 2, hasTD: false, hasTP: true },
+        { name: "التشريعات", code: "D00T0001M_S2", coeff: 1, hasTD: false, hasTP: false }
+    ];
+
+    function buildList(data, containerId, prefix) {
+        const container = document.getElementById(containerId);
+        data.forEach((mod, i) => {
+            container.innerHTML += `
+                <div class="module-row">
+                    <div class="module-info">
+                        <span class="module-name">${mod.name}</span>
+                        <span class="module-code">${mod.code}</span>
+                    </div>
+                    <div style="font-weight:bold">${mod.coeff}</div>
+                    <div id="${prefix}-avg-${i}" style="color:var(--primary-green); font-weight:bold">0.0</div>
+                </div>
+                <div class="score-inputs">
+                    <input type="number" placeholder="امتحان" class="${prefix}-exam" oninput="calcMod('${prefix}', ${i})">
+                    ${mod.hasTD ? `<input type="number" placeholder="TD" class="${prefix}-td" oninput="calcMod('${prefix}', ${i})">` : ''}
+                    ${mod.hasTP ? `<input type="number" placeholder="TP" class="${prefix}-tp" oninput="calcMod('${prefix}', ${i})">` : ''}
+                </div>
+            `;
+        });
+    }
+
+    function calcMod(prefix, i) {
+        const data = prefix === 's1' ? s1_data : s2_data;
+        const exam = parseFloat(document.querySelectorAll(`.${prefix}-exam`)[i].value) || 0;
+        const tdInput = document.querySelectorAll(`.${prefix}-td`)[i];
+        const tpInput = document.querySelectorAll(`.${prefix}-tp`)[i];
+        
+        let avg = 0;
+        if (tdInput && tpInput) {
+            avg = (exam * 0.6) + (parseFloat(tdInput.value) || 0) * 0.2 + (parseFloat(tpInput.value) || 0) * 0.2;
+        } else if (tdInput || tpInput) {
+            let cont = parseFloat((tdInput || tpInput).value) || 0;
+            avg = (exam * 0.6) + (cont * 0.4);
+        } else {
+            avg = exam;
+        }
+        document.getElementById(`${prefix}-avg-${i}`).innerText = avg.toFixed(2);
+    }
+
+    function calculate() {
+        let resS1 = getSemGPA('s1', s1_data);
+        let resS2 = getSemGPA('s2', s2_data);
+        document.getElementById('resS1').innerText = resS1.toFixed(2);
+        document.getElementById('resS2').innerText = resS2.toFixed(2);
+        document.getElementById('resYear').innerText = ((resS1 + resS2) / 2).toFixed(2);
+    }
+
+    function getSemGPA(prefix, data) {
+        let total = 0, coeffs = 0;
+        data.forEach((mod, i) => {
+            let val = parseFloat(document.getElementById(`${prefix}-avg-${i}`).innerText);
+            total += (val * mod.coeff);
+            coeffs += mod.coeff;
+        });
+        return total / coeffs;
+    }
+
+    window.onload = () => {
+        buildList(s1_data, 's1-list', 's1');
+        buildList(s2_data, 's2-list', 's2');
+    };
+</script>
+
+</body>
+</html>
